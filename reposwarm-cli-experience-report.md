@@ -148,3 +148,60 @@ The main pain points are around **observability during long-running operations**
 With step-level progress, time estimates, and a `--follow` mode, this would go from "functional but opaque" to "genuinely pleasant to operate."
 
 **Overall rating: 7/10** — Gets the job done, but the operator experience needs polish for autonomous agent use.
+
+---
+
+## v1.3.171 Follow-Up (Same Day, ~15 hours later)
+
+Updated from v1.3.162 → v1.3.171 and re-ran the full investigation.
+
+### What Changed (Improvements)
+
+1. **Step-level progress in `wf progress`** ✅ FIXED
+   - Now shows "Steps: 153/153 (100%) across 9 repos" and per-repo "17/17 steps"
+   - This was my #1 recommendation — implemented!
+
+2. **`reposwarm errors` now surfaces failed workflows** ✅ FIXED
+   - Now says "WARNING: 18 workflows failed" instead of "No errors found"
+   - Exactly what I asked for
+
+3. **`wf prune` command** ✅ NEW
+   - Can clean up old completed/failed workflows
+   - Note: the pruned workflows still appeared in `wf list` afterward — might be a bug or just Temporal retention
+
+4. **`wf watch` command** ✅ NEW
+   - Real-time workflow watching (5s polling)
+   - Very verbose for agent use (full workflow ID list every 5s) — a `--compact` flag would help
+   - No step-level detail in watch output — only shows running/completed count
+
+5. **More investigation steps (17 vs ~12)**
+   - New steps like `feature_flags` added
+   - More thorough analysis
+
+6. **`investigate --force` flag works**
+   - Cache-aware: skips recently investigated repos by default, `--force` overrides
+   - Smart behavior
+
+### What's Still Missing
+
+1. **Time estimates / ETA** — Still no predicted completion time
+2. **`investigate --wait`** — Still no blocking mode; had to build my own polling loop
+3. **`wf watch --for-agent`** — Watch output is not machine-friendly (no step detail, very verbose)
+4. **Worker env restart reliability** — Didn't test again (used existing config), but unclear if fixed
+5. **Consistent health reporting** — Not tested this round
+
+### Performance Comparison
+
+| Metric | v1.3.162 (first run) | v1.3.171 (cached) |
+|--------|---------------------|-------------------|
+| Total wall time | ~40 min | ~4 min 20s |
+| Steps per repo | ~12 | 17 |
+| Failed runs before success | 2 (18 failures) | 0 |
+| Env setup issues | Yes (critical) | N/A (reused) |
+| Step progress visible | No (0% for 38 min) | Yes (per-repo counts) |
+
+*Note: v1.3.171 run was mostly cache hits since repos hadn't changed. A fresh run with no cache would likely take longer than v1.3.162 due to having 17 steps instead of 12.*
+
+### Updated Rating
+
+**v1.3.171: 8.5/10** — Major observability improvements. Step progress alone makes this dramatically more usable for agents. The remaining gaps (ETA, --wait mode, watch improvements) are nice-to-haves now rather than blockers.
